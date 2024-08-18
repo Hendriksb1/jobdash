@@ -6,26 +6,33 @@
         <label for="firm">Firm:</label>
         <input type="text" id="firm" v-model="newOpening.firm" required>
       </div>
-      
+
       <div class="form-row">
         <label for="typeJob">Job Type:</label>
-        <select id="typeJob" v-model="newOpening.type_job" required>
+        <select id="typeJob" v-model="newOpening.type_job" @change="checkNewJobType" required>
           <option v-for="typeJob in jobTypes" :key="typeJob.id" :value="typeJob.type_name">{{ typeJob.type_name }}</option>
+          <option value="add-new">Add New Job Type</option>
         </select>
       </div>
-      
+
+      <!-- Input for the new job type appears only when "Add New Job Type" is selected -->
+      <div v-if="newOpening.type_job === 'add-new'" class="form-row">
+        <label for="newJobType">New Job Type:</label>
+        <input type="text" id="newJobType" v-model="newOpening.newJobType" required>
+      </div>
+
       <div class="form-row">
         <label for="result">Result:</label>
         <select id="result" v-model="newOpening.result" required>
           <option v-for="result in resultTypes" :key="result.id" :value="result.result_name">{{ result.result_name }}</option>
         </select>
       </div>
-      
+
       <div class="form-row">
         <label for="url">URL:</label>
         <input type="text" id="url" v-model="newOpening.url">
       </div>
-      
+
       <div class="form-row">
         <button type="submit">Add Opening</button>
       </div>
@@ -42,6 +49,7 @@ export default {
       newOpening: {
         firm: '',
         type_job: '',
+        newJobType: '', // Additional field for new job type
         result: '',
         url: ''
       },
@@ -72,21 +80,36 @@ export default {
     },
     async handleSubmit() {
       try {
+        if (this.newOpening.type_job === 'add-new') {
+          // Add the new job type
+          await axios.post('http://localhost:8080/addJobType', { name: this.newOpening.newJobType });
+          this.newOpening.type_job = this.newOpening.newJobType; // Set the job type to the new one
+        }
+
+        // Add the opening
         const response = await axios.post('http://localhost:8080/addOpening', this.newOpening);
         this.$emit('opening-added', response.data);
         this.newOpening = {
           firm: '',
           type_job: '',
+          // newJobType: '',
           result: '',
           url: ''
         };
+        console.log(this.newOpening)
       } catch (error) {
         console.error('Error adding opening:', error);
+      }
+    },
+    checkNewJobType() {
+      if (this.newOpening.type_job !== 'add-new') {
+        this.newOpening.newJobType = '';
       }
     }
   }
 };
 </script>
+
 
 <style scoped>
 .add-opening {

@@ -26,6 +26,8 @@ func (s *Server) Init() {
 		log.Fatalf("Port %d is already in use", port)
 	}
 
+	fmt.Println("starting server")
+
 	defer s.DB.Close()
 
 	// Initialize the CORS middleware
@@ -81,6 +83,7 @@ func (s *Server) Init() {
 	mux.HandleFunc("/getOpeningsByJob", s.GetOpeningsByJob)
 	mux.HandleFunc("/getCountThisWeek", s.GetCountThisWeek)
 	mux.HandleFunc("/getCountsPerWeek", s.GetCountsPerWeek)
+	mux.HandleFunc("/addJobType", s.AddJobType)
 
 	handler := c.Handler(mux)
 	fmt.Printf("Server is running on port %d\n", port)

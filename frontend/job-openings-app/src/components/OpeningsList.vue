@@ -4,17 +4,48 @@
     <table>
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Firm</th>
-          <th>Job Type</th>
-          <th>Result</th>
-          <th>Application Date</th>
-          <th>URL</th>
+          <th @click="sortTable('id')">
+            ID
+            <span v-if="sortKey === 'id'" class="sort-indicator">
+              {{ sortOrder === 'asc' ? '▲' : '▼' }}
+            </span>
+          </th>
+          <th @click="sortTable('firm')">
+            Firm
+            <span v-if="sortKey === 'firm'" class="sort-indicator">
+              {{ sortOrder === 'asc' ? '▲' : '▼' }}
+            </span>
+          </th>
+          <th @click="sortTable('type_job')">
+            Job Type
+            <span v-if="sortKey === 'type_job'" class="sort-indicator">
+              {{ sortOrder === 'asc' ? '▲' : '▼' }}
+            </span>
+          </th>
+          <th @click="sortTable('result')">
+            Result
+            <span v-if="sortKey === 'result'" class="sort-indicator">
+              {{ sortOrder === 'asc' ? '▲' : '▼' }}
+            </span>
+          </th>
+          <th @click="sortTable('application_date')">
+            Application Date
+            <span v-if="sortKey === 'application_date'" class="sort-indicator">
+              {{ sortOrder === 'asc' ? '▲' : '▼' }}
+            </span>
+          </th>
+          <th @click="sortTable('url')">
+            URL
+            <span v-if="sortKey === 'url'" class="sort-indicator">
+              {{ sortOrder === 'asc' ? '▲' : '▼' }}
+            </span>
+          </th>
           <th>Action</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="opening in openings" :key="opening.id">
+        <tr v-for="opening in sortedOpenings" :key="opening.id"
+          :class="getResultClass(opening.result)">
           <td>{{ opening.id }}</td>
           <td @click="setEditable(opening, 'firm')" :contenteditable="isEditable(opening, 'firm')" @input="updateField(opening, 'firm', $event)">
             {{ opening.firm }}
@@ -45,6 +76,7 @@
   </div>
 </template>
 
+
 <script>
 import axios from 'axios';
 
@@ -56,8 +88,26 @@ export default {
       editableFields: {},
       modifiedOpenings: {},
       resultTypes: [],
-      jobTypes: []
+      jobTypes: [],
+      sortKey: '',
+      sortOrder: 'asc',
     };
+  },
+  computed: {
+    sortedOpenings() {
+      // Create a copy of the openings array to avoid mutating the original
+      const sorted = [...this.openings];
+
+      // Sort the copied array
+      sorted.sort((a, b) => {
+        let modifier = this.sortOrder === 'asc' ? 1 : -1;
+        if (a[this.sortKey] < b[this.sortKey]) return -1 * modifier;
+        if (a[this.sortKey] > b[this.sortKey]) return 1 * modifier;
+        return 0;
+      });
+
+      return sorted;
+    }
   },
   watch: {
     newOpening: {
@@ -75,6 +125,14 @@ export default {
     this.fetchJobTypes();
   },
   methods: {
+    sortTable(key) {
+      if (this.sortKey === key) {
+        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.sortKey = key;
+        this.sortOrder = 'asc';
+      }
+    },
     async fetchOpenings() {
       try {
         const response = await axios.get('http://localhost:8080/getAllOpenings');
@@ -141,25 +199,37 @@ export default {
       }
     },
     formatApplicationDate(dateString) {
-      // Assuming dateString is in ISO format, e.g., "2024-07-15T12:30:00Z"
       const date = new Date(dateString);
       return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    },
+    getResultClass(result) {
+      switch (result.toLowerCase()) {
+        case 'rejected':
+          return 'rejected-row';
+        case 'pending':
+          return 'pending-row';
+        case 'interview':
+          return 'interview-row';
+        case 'ghosted':
+          return 'ghosted-row';
+        default:
+          return '';
+      }
     }
   }
 };
+
 </script>
 
 <style scoped>
+
 .openings-list {
   background-color: #1e1e1e;
   padding: 20px;
   border-radius: 10px;
   margin: 20px;
   text-align: left;
-}
-
-h2 {
-  color: #e0e0e0;
+  overflow-x: auto; /* Enables horizontal scrolling if the table overflows */
 }
 
 table {
@@ -167,6 +237,7 @@ table {
   border-collapse: collapse;
   margin-top: 20px;
   color: #e0e0e0;
+  table-layout: fixed; /* Ensures that the table doesn't exceed 100% width */
 }
 
 thead {
@@ -177,11 +248,38 @@ th, td {
   padding: 10px;
   text-align: left;
   border-bottom: 1px solid #444;
+  white-space: nowrap; /* Prevents text wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Shows ellipsis if content overflows */
 }
 
 th {
   background-color: #444;
   color: #e0e0e0;
+  cursor: pointer;
+  position: relative;
+}
+
+th:hover {
+  background-color: #555;
+}
+
+td {
+  max-width: 150px; /* Sets a max width for table cells */
+}
+
+.sort-indicator {
+  margin-left: 8px;
+  font-size: 0.8em;
+  color: #e0e0e0;
+}
+
+.rejected-row, .ghosted-row {
+  background-color: #d6646459; /* Light red background */
+}
+
+.interview-row {
+  background-color: #5cb85c59; /* Light green background */
 }
 
 tr:hover {
@@ -222,4 +320,5 @@ input:focus, select:focus {
   outline: none;
   border-color: #555;
 }
+
 </style>

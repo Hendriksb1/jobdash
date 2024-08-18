@@ -22,8 +22,6 @@ type Opening struct {
 
 func (s *Server) AddOpening(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("attempting to add opening")
-
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
@@ -35,6 +33,14 @@ func (s *Server) AddOpening(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Invalid request body")
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
+	}
+
+	if  _, ok := s.JobIdRelation[opening.TypeJob]; !ok {
+		// update job relation map
+		s.JobIdRelation, err = s.LoadIdNameRelation("job_types")
+		if err != nil {
+			print("failed to load job types: %v", err.Error())
+		}
 	}
 
 	query := "INSERT INTO openings (firm, type_job, result, url) VALUES (?, ?, ?, ?)"
@@ -57,7 +63,7 @@ func (s *Server) AddOpening(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(opening)
 
-	print("added ", opening.ID)
+	fmt.Println("added ", opening)
 }
 
 func (s *Server) GetAllOpenings(w http.ResponseWriter, r *http.Request) {
@@ -296,6 +302,7 @@ func (s *Server) GetOpeningsByJob(w http.ResponseWriter, r *http.Request) {
 		FROM openings
 		JOIN job_types as j ON j.id = openings.type_job 
 		GROUP BY type_job
+		ORDER BY total_count DESC;
 	`
 	rows, err := s.DB.Query(query)
 	if err != nil {
@@ -364,14 +371,13 @@ func (s *Server) GetCountThisWeek(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resultOverview)
 }
 
-
 type WeeklyCount struct {
 	WeekEndDate string `json:"week_end_date"`
 	EntryCount  int    `json:"entry_count"`
 }
 
 func (s *Server) GetCountsPerWeek(w http.ResponseWriter, r *http.Request) {
-if r.Method != http.MethodGet {
+	if r.Method != http.MethodGet {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
