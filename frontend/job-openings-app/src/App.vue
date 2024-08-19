@@ -7,6 +7,8 @@
       <ApplicationsThisWeek />
       <ApplicationsPerWeek />
     </div>
+    <UserOperations />
+  
     <OpeningsList :newOpening="newOpening" @data-changed="handleDataChanged" />
   </div>
 </template>
@@ -18,6 +20,7 @@ import ResultsOverview from './components/ResultsOverview.vue';
 import JobsOverview from './components/JobsOverview.vue';
 import ApplicationsThisWeek from './components/ApplicationsThisWeek.vue';
 import ApplicationsPerWeek from './components/ApplicationsPerWeek.vue';
+import UserOperations from './components/UserOperations.vue';
 
 export default {
   name: 'App',
@@ -27,7 +30,8 @@ export default {
     ResultsOverview,
     JobsOverview,
     ApplicationsThisWeek,
-    ApplicationsPerWeek
+    ApplicationsPerWeek,
+    UserOperations
   },
   data() {
     return {
@@ -83,4 +87,4 @@ html {
 }
 
 
-</style>
+</style>./components/UserOperations.vue

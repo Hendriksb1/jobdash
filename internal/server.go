@@ -14,9 +14,13 @@ import (
 var err error
 
 type Server struct {
-	DB               *sql.DB
+	Model            // embedded so all methods of model are availiable on server
 	JobIdRelation    map[string]int
 	ResultIdRelation map[string]int
+}
+
+type Model struct {
+	*sql.DB
 }
 
 func (s *Server) Init() {
@@ -84,6 +88,10 @@ func (s *Server) Init() {
 	mux.HandleFunc("/getCountThisWeek", s.GetCountThisWeek)
 	mux.HandleFunc("/getCountsPerWeek", s.GetCountsPerWeek)
 	mux.HandleFunc("/addJobType", s.AddJobType)
+	mux.HandleFunc("/registerUser", s.RegisterUser)
+	mux.HandleFunc("/unRegisterUser", s.UnRegisterUser)
+	mux.HandleFunc("/changeUser", s.ChangeUser)
+	mux.HandleFunc("/getUser", s.GetUser)
 
 	handler := c.Handler(mux)
 	fmt.Printf("Server is running on port %d\n", port)
@@ -115,7 +123,7 @@ func (s *Server) UpdateGhostedStatus() error {
 		return err
 	}
 
-	r, err :=  res.LastInsertId()
+	r, err := res.LastInsertId()
 	if err != nil {
 		return err
 	}
@@ -125,7 +133,7 @@ func (s *Server) UpdateGhostedStatus() error {
 	return nil
 }
 
-func (s *Server) UpdateWeeklyCounts () error {
+func (s *Server) UpdateWeeklyCounts() error {
 	q := `DELETE FROM weekly_counts;
         	 INSERT INTO weekly_counts (week_end_date, entry_count)
              SELECT
@@ -140,7 +148,7 @@ func (s *Server) UpdateWeeklyCounts () error {
 		return err
 	}
 
-	r, err :=  res.LastInsertId()
+	r, err := res.LastInsertId()
 	if err != nil {
 		return err
 	}

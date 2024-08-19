@@ -68,7 +68,7 @@ func (s *Server) AddOpening(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) GetAllOpenings(w http.ResponseWriter, r *http.Request) {
 
-	print("attempting to get all openings")
+	fmt.Println("attempting to get all openings")
 	if r.Method != http.MethodGet {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
