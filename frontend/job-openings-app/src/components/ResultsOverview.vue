@@ -1,24 +1,42 @@
 <template>
   <div class="results-overview-widget">
     <h3>Results Overview</h3>
-    <table>
-      <tbody>
-        <tr v-for="overview in resultOverview" :key="overview.result_name">
-          <td>{{ overview.result_name }}</td>
-          <td>{{ overview.count_total }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <Pie :data="chartData" />
   </div>
 </template>
 
 <script>
 import axios from 'axios';
+import { Pie } from 'vue-chartjs';
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  CategoryScale,
+} from 'chart.js';
+
+// Register necessary Chart.js components
+ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale);
 
 export default {
+  components: {
+    Pie,  // Register the Pie chart component
+  },
   data() {
     return {
-      resultOverview: []
+      resultOverview: [],
+      chartData: {
+        labels: [],  // Labels for the pie chart
+        datasets: [
+          {
+            label: 'Results Overview',
+            backgroundColor: ['#333', '#c84138', '#f44336', '#42b983'],  // Update with your colors
+            data: [],  // Data for each label
+          },
+        ],
+      },
     };
   },
   created() {
@@ -29,18 +47,33 @@ export default {
       try {
         const response = await axios.get('http://localhost:8080/getOpeningsByResult');
         this.resultOverview = response.data;
+
+        // Update chart data based on the API response
+        this.updateChartData();
       } catch (error) {
         console.error('Error fetching results overview:', error);
       }
+    },
+    updateChartData() {
+      const labels = this.resultOverview.map(overview => overview.result_name);
+      const data = this.resultOverview.map(overview => overview.count_total);
+
+      // Use Object.assign to ensure Vue detects the change
+      this.chartData = Object.assign({}, this.chartData, {
+        labels: labels,
+        datasets: [
+          {
+            ...this.chartData.datasets[0],
+            data: data,
+          },
+        ],
+      });
     }
   },
   watch: {
-    // Watch for changes in key prop to fetch data again
-    '$route': {
-      handler() {
-        this.fetchResultsOverview();
-      },
-      immediate: true
+    resultOverview() {
+      // Update chart data when resultOverview changes
+      this.updateChartData();
     }
   }
 };
@@ -54,9 +87,9 @@ export default {
   margin: 20px;
   text-align: left;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  max-width: calc(33.33% - 20px); /* One-third of the maximum width minus margins */
-  float: left; /* Ensures it occupies only the necessary width */
-  clear: both; /* Clears any previous floats */
+  max-width: calc(33.33% - 20px);
+  float: left;
+  clear: both;
 }
 
 h3 {
@@ -65,20 +98,10 @@ h3 {
   font-size: 1.2rem;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 8px;
-  color: #e0e0e0;
-}
-
-td {
-  padding: 6px;
-  text-align: left;
-  border-bottom: 1px solid #444;
-}
-
-tr:last-child td {
-  border-bottom: none;
+canvas {
+  width: 100% !important;
+  height: auto !important;
+  max-width: 400px;
+  max-height: 400px;
 }
 </style>

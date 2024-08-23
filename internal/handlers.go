@@ -249,10 +249,11 @@ func (s *Server) GetOpeningsByResult(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `
-		SELECT results.result_name, COUNT(openings.id) as count_total 
+		SELECT results.result_name, COUNT(openings.id) as total_count 
 		FROM openings 
 		JOIN results ON results.id = openings.result 
 		GROUP BY results.result_name
+		ORDER BY total_count DESC;
 	`
 
 	rows, err := s.DB.Query(query)

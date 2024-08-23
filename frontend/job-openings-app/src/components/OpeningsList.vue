@@ -292,7 +292,7 @@ a {
 
 button {
   padding: 5px 10px;
-  background-color: #f44336;
+  background-color: #c84138;
   color: white;
   border: none;
   border-radius: 4px;

@@ -2,10 +2,12 @@
   <div id="app">
     <AddOpening @opening-added="handleOpeningAdded" />
     <div class="widgets-row">
-      <ResultsOverview :key="overviewKey" />
       <JobsOverview :key="jobKey" />
-      <ApplicationsThisWeek />
+      <ResultsOverview :key="overviewKey" />
       <ApplicationsPerWeek />
+    </div>
+    <div class="widgets-row">
+      <ApplicationsThisWeek />
     </div>
     <UserOperations />
   
@@ -72,7 +74,7 @@ html {
 }
 
 .widgets-row > div {
-  max-height: 340px; /* Set a max height */
+  max-height: 460px; /* Set a max height */
   overflow-y: auto; /* Enable vertical scrolling if content exceeds max height */
   margin: 10px; /* Space between widgets */
   background-color: #1e1e1e; /* Background color for the widgets */
