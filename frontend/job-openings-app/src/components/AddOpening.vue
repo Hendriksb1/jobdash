@@ -15,7 +15,6 @@
         </select>
       </div>
 
-      <!-- Input for the new job type appears only when "Add New Job Type" is selected -->
       <div v-if="newOpening.type_job === 'add-new'" class="form-row">
         <label for="newJobType">New Job Type:</label>
         <input type="text" id="newJobType" v-model="newOpening.newJobType" required>
@@ -42,6 +41,7 @@
 
 <script>
 import axios from 'axios';
+import { mapState } from 'vuex'; // Import mapState helper
 
 export default {
   data() {
@@ -51,15 +51,28 @@ export default {
         type_job: '',
         newJobType: '', // Additional field for new job type
         result: '',
-        url: ''
+        url: '',
+        user_id: this.user_id // Initialize user_id from Vuex
       },
       resultTypes: [],
       jobTypes: []
     };
   },
+  computed: {
+    ...mapState({
+      user_id: state => state.loggedInUser?.id // Map the user ID from Vuex
+    })
+  },
+  watch: {
+    user_id(newUserId) {
+      // Watch for changes in user_id and update newOpening accordingly
+      this.newOpening.user_id = newUserId;
+    }
+  },
   created() {
     this.fetchResultTypes();
     this.fetchJobTypes();
+    this.newOpening.user_id = this.user_id; // Assign user_id from Vuex to the form
   },
   methods: {
     async fetchResultTypes() {
@@ -89,21 +102,22 @@ export default {
         // Add the opening
         const response = await axios.post('http://localhost:8080/addOpening', this.newOpening);
         this.$emit('opening-added', response.data);
+        // Reset the form, except for user_id
         this.newOpening = {
           firm: '',
           type_job: '',
-          // newJobType: '',
+          newJobType: '', // Reset this as well
           result: '',
-          url: ''
+          url: '',
+          user_id: this.user_id // Keep the user_id from Vuex
         };
-        console.log(this.newOpening)
       } catch (error) {
         console.error('Error adding opening:', error);
       }
     },
     checkNewJobType() {
       if (this.newOpening.type_job !== 'add-new') {
-        this.newOpening.newJobType = '';
+        this.newOpening.newJobType = ''; // Reset newJobType if not adding a new one
       }
     }
   }

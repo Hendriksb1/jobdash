@@ -49,6 +49,71 @@ func (s *Server) GetUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resUser)
 }
 
+func (s *Server) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println("attempting to get user by email")
+
+	if r.Method != http.MethodGet {
+		fmt.Println("invalid request method")
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Check if email query parameter exists
+	if !r.URL.Query().Has("email") {
+		fmt.Println("missing email query parameter")
+		http.Error(w, "Missing email query parameter", http.StatusBadRequest)
+		return
+	}
+
+	email := r.URL.Query().Get("email")
+
+	// Add validation if needed (e.g., checking email format)
+	if email == "" {
+		fmt.Println("invalid email")
+		http.Error(w, "invalid email", http.StatusBadRequest)
+		return
+	}
+
+	// Call your method to fetch user by email
+	resUser, err := s.SelectUserByEmail(email)
+	if err != nil {
+		fmt.Println("failed to select user by email: ", email, err.Error())
+		http.Error(w, "failed to select user", http.StatusInternalServerError)
+		return
+	}
+
+	// Response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resUser)
+}
+
+func (m *Model) SelectUserByEmail(email string) (*User, error) {
+	q := `
+		SELECT id, name, email FROM users WHERE email = ?;
+	`
+	rows, err := m.Query(q, email)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Check if there is a result
+	if !rows.Next() {
+		return nil, errors.New("no user found")
+	}
+
+	// Create a User instance
+	user := &User{}
+
+	// Assuming your User struct has fields: ID, Name, and Email
+	if err := rows.Scan(&user.Id, &user.Name, &user.Email); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (m *Model) SelectUser(id int32) (*User, error) {
 	q := `
 		SELECT id, name, email FROM users WHERE id = ?;
@@ -189,7 +254,6 @@ func (m *Model) UpdateUser(u *User) error {
 	q := `
 		UPDATE users SET (name, email) values(?, ?) WHERE id = ?;
 	`
-
 	res, err := m.Exec(q, u.Name, u.Email, u.Id)
 	if err != nil {
 		return err

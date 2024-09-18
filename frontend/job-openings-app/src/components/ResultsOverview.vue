@@ -1,6 +1,6 @@
 <template>
   <div class="results-overview-widget">
-    <h3>Results Overview</h3>
+    <h3>Status Overview</h3>
     <Pie :data="chartData" />
   </div>
 </template>
@@ -32,7 +32,7 @@ export default {
         datasets: [
           {
             label: 'Results Overview',
-            backgroundColor: ['#333', '#c84138', '#f44336', '#42b983'],  // Update with your colors
+            backgroundColor: ['#333', '#c84138', '#f44336', '#fff', '#42b983'],  // Update with your colors
             data: [],  // Data for each label
           },
         ],

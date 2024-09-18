@@ -4,12 +4,12 @@
     <table>
       <thead>
         <tr>
-          <th @click="sortTable('id')">
+          <!-- <th @click="sortTable('id')">
             ID
             <span v-if="sortKey === 'id'" class="sort-indicator">
               {{ sortOrder === 'asc' ? '▲' : '▼' }}
             </span>
-          </th>
+          </th> -->
           <th @click="sortTable('firm')">
             Firm
             <span v-if="sortKey === 'firm'" class="sort-indicator">
@@ -46,7 +46,7 @@
       <tbody>
         <tr v-for="opening in sortedOpenings" :key="opening.id"
           :class="getResultClass(opening.result)">
-          <td>{{ opening.id }}</td>
+          <!-- <td>{{ opening.id }}</td> -->
           <td @click="setEditable(opening, 'firm')" :contenteditable="isEditable(opening, 'firm')" @input="updateField(opening, 'firm', $event)">
             {{ opening.firm }}
           </td>
@@ -64,9 +64,10 @@
           </td>
           <td>{{ formatApplicationDate(opening.application_date) }}</td>
           <td @click="setEditable(opening, 'url')" :contenteditable="isEditable(opening, 'url')" @input="updateField(opening, 'url', $event)">
-            <a :href="opening.url" target="_blank">{{ opening.url }}</a>
+            <a :href="opening.url" target="_blank">{{ opening.url }}</a>            
           </td>
           <td>
+            <button @click="externalLink(opening.url)">Visit</button>
             <button @click="deleteOpening(opening.id)">Delete</button>
             <button @click="updateOpening(opening)" :disabled="!isModified(opening)">Update</button>
           </td>
@@ -120,7 +121,8 @@ export default {
     }
   },
   created() {
-    this.fetchOpenings();
+    console.log(this.$store.getters.user.id)
+    this.fetchOpenings(this.$store.getters.user.id);
     this.fetchResultTypes();
     this.fetchJobTypes();
   },
@@ -133,9 +135,9 @@ export default {
         this.sortOrder = 'asc';
       }
     },
-    async fetchOpenings() {
+    async fetchOpenings(id) {
       try {
-        const response = await axios.get('http://localhost:8080/getAllOpenings');
+        const response = await axios.get(`http://localhost:8080/getAllOpenings/${id}`);
         this.openings = response.data;
       } catch (error) {
         console.error('Error fetching openings:', error);
@@ -165,6 +167,9 @@ export default {
       } catch (error) {
         console.error('Error deleting opening:', error);
       }
+    },
+    externalLink(url) {
+      window.open(url, '_blank');
     },
     setEditable(opening, field) {
       if (!this.editableFields[opening.id]) {
@@ -265,7 +270,7 @@ th:hover {
 }
 
 td {
-  max-width: 150px; /* Sets a max width for table cells */
+  max-width: 250px; /* Sets a max width for table cells */
 }
 
 .sort-indicator {
@@ -297,6 +302,7 @@ button {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  margin-right: 5px;
 }
 
 button:hover {

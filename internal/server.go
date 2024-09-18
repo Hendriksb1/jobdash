@@ -44,54 +44,64 @@ func (s *Server) Init() {
 
 	s.DB, err = sql.Open("sqlite3", "./findajob.db")
 	if err != nil {
-		print("Error opening database: %v", err)
+		fmt.Println("Error opening database: %v", err)
 	}
 
 	err = s.DB.Ping()
 	if err != nil {
-		print("Error connecting to database: %v", err)
+		fmt.Println("Error connecting to database: %v", err)
 	}
 
 	// laod maps
 	s.JobIdRelation, err = s.LoadIdNameRelation("job_types")
 	if err != nil {
-		print("failed to load job types: %v", err.Error())
+		fmt.Println("failed to load job types: %v", err.Error())
 	}
 
 	s.ResultIdRelation, err = s.LoadIdNameRelation("results")
 	if err != nil {
-		print("failed to load result types: %v", err.Error())
+		fmt.Println("failed to load result types: %v", err.Error())
 	}
 
 	// update ghost status
 	err := s.UpdateGhostedStatus()
 	if err != nil {
-		print("failed to update ghost status: %v", err.Error())
+		fmt.Println("failed to update ghost status: %v", err.Error())
 	}
 
 	// update weekly table
 	err = s.UpdateWeeklyCounts()
 	if err != nil {
-		print("failed to update weekly counts: %v", err.Error())
+		fmt.Println("failed to update weekly counts: %v", err.Error())
 	}
 
-	// set up handlers
 	mux := mux.NewRouter()
+
+	// openings
 	mux.HandleFunc("/addOpening", s.AddOpening).Methods(http.MethodPost)
-	mux.HandleFunc("/getAllOpenings", s.GetAllOpenings).Methods(http.MethodGet)
-	mux.HandleFunc("/getAllResultTypes", s.GetAllResultTypes).Methods(http.MethodGet)
-	mux.HandleFunc("/getAllJobTypes", s.GetAllJobTypes).Methods(http.MethodGet)
+	mux.HandleFunc("/getAllOpenings/{id}", s.GetAllOpenings).Methods(http.MethodGet)
+	mux.HandleFunc("/getOpeningsByResult", s.GetOpeningsByResult)
 	mux.HandleFunc("/deleteOpening/{id}", s.DeleteOpening).Methods(http.MethodDelete)
 	mux.HandleFunc("/updateOpening/{id}", s.UpdateOpening).Methods(http.MethodPut)
-	mux.HandleFunc("/getOpeningsByResult", s.GetOpeningsByResult)
+
+	// types
+	mux.HandleFunc("/getAllResultTypes", s.GetAllResultTypes).Methods(http.MethodGet)
+	mux.HandleFunc("/getAllJobTypes", s.GetAllJobTypes).Methods(http.MethodGet)
+
+	// aggregations
 	mux.HandleFunc("/getOpeningsByJob", s.GetOpeningsByJob)
 	mux.HandleFunc("/getCountThisWeek", s.GetCountThisWeek)
 	mux.HandleFunc("/getCountsPerWeek", s.GetCountsPerWeek)
+
+	// job type
 	mux.HandleFunc("/addJobType", s.AddJobType)
+
+	// user
 	mux.HandleFunc("/registerUser", s.RegisterUser)
 	mux.HandleFunc("/unRegisterUser", s.UnRegisterUser)
 	mux.HandleFunc("/changeUser", s.ChangeUser)
 	mux.HandleFunc("/getUser", s.GetUser)
+	mux.HandleFunc("/getUserByEmail", s.GetUserByEmail)
 
 	handler := c.Handler(mux)
 	fmt.Printf("Server is running on port %d\n", port)

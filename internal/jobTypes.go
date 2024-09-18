@@ -47,3 +47,40 @@ func (s *Server) InsertJobType(jobName string) error {
 
 	return nil
 }
+
+func (s *Server) GetAllJobTypes(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	query := `
+		SELECT type_name 
+		FROM job_types
+		ORDER BY LOWER(type_name) DESC;	
+	`
+	rows, err := s.DB.Query(query)
+	if err != nil {
+		http.Error(w, "Failed to retrieve job types", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var results []Result2
+	for rows.Next() {
+		var result Result2
+		if err := rows.Scan(&result.TypeName); err != nil {
+			http.Error(w, "Failed to scan result type", http.StatusInternalServerError)
+			return
+		}
+		results = append(results, result)
+	}
+
+	if err := rows.Err(); err != nil {
+		http.Error(w, "Error occurred during row iteration", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+}
