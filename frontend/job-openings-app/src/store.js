@@ -1,5 +1,6 @@
 import { createStore } from 'vuex';
 import axios from 'axios';
+import createPersistedState from 'vuex-persistedstate'; // Import vuex-persistedstate
 
 export default createStore({
   state: {
@@ -51,5 +52,11 @@ export default createStore({
     logoutUser({ commit }) {
       commit('LOGOUT_USER');
     }
-  }
+  },
+  plugins: [
+    createPersistedState({
+      key: 'my-app', // The key to store in localStorage
+      paths: ['loggedInUser'], // Persist only the loggedInUser state
+    })
+  ]
 });

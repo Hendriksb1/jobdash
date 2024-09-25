@@ -67,7 +67,7 @@
             <a :href="opening.url" target="_blank">{{ opening.url }}</a>            
           </td>
           <td>
-            <button @click="externalLink(opening.url)">Visit</button>
+            <button @click="navigateToDetail(opening.id)">More</button>
             <button @click="deleteOpening(opening.id)">Delete</button>
             <button @click="updateOpening(opening)" :disabled="!isModified(opening)">Update</button>
           </td>
@@ -127,6 +127,11 @@ export default {
     this.fetchJobTypes();
   },
   methods: {
+    navigateToDetail(id) {
+      console.log("emmiting event", id)
+      this.$router.push({ name: 'job-detail', params: { id } });
+      this.$emit('show-router-view', id); // Emit event with id
+    },
     sortTable(key) {
       if (this.sortKey === key) {
         this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';

@@ -1,10 +1,12 @@
 package internal
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -17,7 +19,7 @@ type Opening struct {
 	Result          string `json:"result"`
 	ApplicationDate string `json:"application_date,omitempty"`
 	URL             string `json:"url"`
-	UserID          string `json:"user_id"`
+	UserID          int    `json:"user_id"`
 }
 
 func (s *Server) AddOpening(w http.ResponseWriter, r *http.Request) {
@@ -64,6 +66,71 @@ func (s *Server) AddOpening(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(opening)
 
 	fmt.Println("added ", opening)
+}
+
+func (s *Server) GetOpening(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("attempting to get an opening")
+
+	if r.Method != http.MethodGet {
+		fmt.Println("Invalid request method")
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse query parameters
+	userIdStr := r.URL.Query().Get("userId")
+	jobIdStr := r.URL.Query().Get("jobId")
+
+	fmt.Println(userIdStr)
+	fmt.Println(jobIdStr)
+
+	userId, err := strconv.Atoi(userIdStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	jobId, err := strconv.Atoi(jobIdStr)
+	if err != nil {
+		http.Error(w, "Invalid job ID", http.StatusBadRequest)
+		return
+	}
+
+	q := `
+	SELECT openings.id, firm, type_name, result_name, application_date, url
+	FROM openings
+	JOIN results ON openings.result = results.id
+	JOIN job_types ON openings.type_job = job_types.id
+	WHERE openings.user_id = ? AND openings.id = ?;
+	`
+
+	var opening struct {
+		ID              int       `json:"id"`
+		Firm            string    `json:"firm"`
+		TypeName        string    `json:"type_name"`
+		ResultName      string    `json:"result_name"`
+		ApplicationDate time.Time `json:"application_date"`
+		URL             string    `json:"url"`
+	}
+
+	err = s.DB.QueryRow(q, userId, jobId).Scan(&opening.ID, &opening.Firm, &opening.TypeName, &opening.ResultName, &opening.ApplicationDate, &opening.URL)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Opening not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Error querying database", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Set content type to JSON
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// Encode the opening struct to JSON and write to response
+	if err := json.NewEncoder(w).Encode(opening); err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+	}
 }
 
 // GetAllOpenings is used for the list of openings

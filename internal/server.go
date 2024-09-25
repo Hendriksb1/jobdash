@@ -80,6 +80,7 @@ func (s *Server) Init() {
 	// openings
 	mux.HandleFunc("/addOpening", s.AddOpening).Methods(http.MethodPost)
 	mux.HandleFunc("/getAllOpenings/{id}", s.GetAllOpenings).Methods(http.MethodGet)
+	mux.HandleFunc("/getOpening", s.GetOpening).Methods(http.MethodGet)
 	mux.HandleFunc("/getOpeningsByResult", s.GetOpeningsByResult)
 	mux.HandleFunc("/deleteOpening/{id}", s.DeleteOpening).Methods(http.MethodDelete)
 	mux.HandleFunc("/updateOpening/{id}", s.UpdateOpening).Methods(http.MethodPut)

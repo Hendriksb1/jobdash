@@ -2,19 +2,32 @@
   <div id="app">
     <!-- Conditionally render based on login status -->
     <UserLoginLogout v-if="!loggedInUser" @login-success="handleLoginSuccess" />
-    
+
     <div v-else>
-      <AddOpening @opening-added="handleOpeningAdded" />
-      <div class="widgets-row">
+      <div v-if="!isInRouterView">hello</div>
+
+      <!-- Display main application components when not in a router view -->
+      <AddOpening @opening-added="handleOpeningAdded" v-if="!isInRouterView" />
+      <div class="widgets-row" v-if="!isInRouterView">
         <JobsOverview :key="jobKey" />
         <ResultsOverview :key="overviewKey" />
         <ApplicationsPerWeek />
       </div>
-      <div class="widgets-row">
+      <div class="widgets-row" v-if="!isInRouterView">
         <ApplicationsThisWeek />
       </div>
-      <OpeningsList :newOpening="newOpening" @data-changed="handleDataChanged" />
-      <button @click="logout">Logout</button>
+
+      <OpeningsList 
+        :newOpening="newOpening"
+        @data-changed="handleDataChanged"
+        v-if="!isInRouterView"
+        @show-router-view="handleShowRouterView" 
+      />
+
+      <button @click="logout" v-if="!isInRouterView">Logout</button>
+
+      <!-- Router view for displaying route-specific components -->
+      <router-view v-if="isInRouterView" @route-change="handleShowRouterView" />
     </div>
   </div>
 </template>
@@ -44,20 +57,18 @@ export default {
     return {
       newOpening: null,
       overviewKey: 0, // Key to force ResultsOverview to remount on data change
+      isInRouterView: false, // Track if we are in a router view
     };
   },
   computed: {
-    // Map Vuex getter to check if user is logged in
     ...mapGetters({
       loggedInUser: 'user' // Using 'user' getter to check logged-in status
     })
   },
   methods: {
-    // Map Vuex actions for login and logout
     ...mapActions(['loginUser', 'logoutUser']),
     
     handleLoginSuccess(email) {
-      // Pass the email to login action in Vuex
       this.loginUser({ email });
     },
     
@@ -66,15 +77,24 @@ export default {
     },
     
     handleDataChanged() {
-      // Incrementing key will force ResultsOverview to remount, triggering fetch
       this.overviewKey++;
     },
     
     logout() {
-      // Call Vuex action to log out the user
       this.logoutUser();
+    },
+    
+    handleShowRouterView() {
+      console.log("Navigating to a new route");
+      this.isInRouterView = true; // Set to true when navigating to a new route
     }
-  }
+  },
+  watch: {
+    $route(to) {
+      // Check if the new route is a detail route and set visibility accordingly
+      this.isInRouterView = to.name === 'job-detail'; // Update this condition as needed for your routes
+    }
+  },
 };
 </script>
 
