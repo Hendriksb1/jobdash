@@ -127,7 +127,7 @@ export default {
 
 <style scoped>
 .add-opening {
-  background-color: #1e1e1e;
+  /* background-color: #1e1e1e; */
   padding: 20px;
   border-radius: 10px;
   margin: 20px;
@@ -135,7 +135,7 @@ export default {
 }
 
 h2 {
-  color: #e0e0e0;
+  color: #42b983;
 }
 
 .opening-form {

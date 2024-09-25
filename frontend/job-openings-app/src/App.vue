@@ -4,8 +4,6 @@
     <UserLoginLogout v-if="!loggedInUser" @login-success="handleLoginSuccess" />
 
     <div v-else>
-      <div v-if="!isInRouterView">hello</div>
-
       <!-- Display main application components when not in a router view -->
       <AddOpening @opening-added="handleOpeningAdded" v-if="!isInRouterView" />
       <div class="widgets-row" v-if="!isInRouterView">
@@ -101,6 +99,7 @@ export default {
 <style>
 html {
   background-color: #000;
+  margin: 0;
 }
 
 #app {
@@ -109,7 +108,7 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  /* margin-top: 60px; */
 }
 
 .widgets-row {
@@ -122,7 +121,7 @@ html {
   max-height: 460px;
   overflow-y: auto;
   margin: 10px;
-  background-color: #1e1e1e;
+  background-color: #1b1b1b;
   padding: 15px;
   border-radius: 10px;
   max-width: calc(20% - 20px);

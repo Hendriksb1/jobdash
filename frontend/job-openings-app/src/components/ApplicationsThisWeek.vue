@@ -41,7 +41,7 @@
   
   <style scoped>
   .applications-this-week-widget {
-    background-color: #1e1e1e;
+    /* background-color: #1e1e1e; */
     padding: 20px;
     border-radius: 10px;
     margin: 20px;
