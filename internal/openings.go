@@ -6,20 +6,20 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gorilla/mux"
 )
 
 // Opening represents a job opening
 type Opening struct {
-	ID              int    `json:"id"`
-	Firm            string `json:"firm"`
-	TypeJob         string `json:"type_job"`
-	Result          string `json:"result"`
-	ApplicationDate string `json:"application_date,omitempty"`
-	URL             string `json:"url"`
-	UserID          int    `json:"user_id"`
+	ID              int            `json:"id"`
+	Firm            string         `json:"firm"`
+	TypeJob         string         `json:"type_job"`
+	Result          string         `json:"result"`
+	ApplicationDate string         `json:"application_date,omitempty"`
+	URL             string         `json:"url"`
+	UserID          int            `json:"user_id"`
+	Comment         sql.NullString `json:"comment"` // Use sql.NullString for nullable fields
 }
 
 func (s *Server) AddOpening(w http.ResponseWriter, r *http.Request) {
@@ -79,10 +79,7 @@ func (s *Server) GetOpening(w http.ResponseWriter, r *http.Request) {
 
 	// Parse query parameters
 	userIdStr := r.URL.Query().Get("userId")
-	jobIdStr := r.URL.Query().Get("jobId")
-
-	fmt.Println(userIdStr)
-	fmt.Println(jobIdStr)
+	oIdStr := r.URL.Query().Get("openingId")
 
 	userId, err := strconv.Atoi(userIdStr)
 	if err != nil {
@@ -90,34 +87,29 @@ func (s *Server) GetOpening(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jobId, err := strconv.Atoi(jobIdStr)
+	openingId, err := strconv.Atoi(oIdStr)
 	if err != nil {
 		http.Error(w, "Invalid job ID", http.StatusBadRequest)
 		return
 	}
 
 	q := `
-	SELECT openings.id, firm, type_name, result_name, application_date, url
+	SELECT openings.id, firm, type_name, result_name, application_date, url, comment
 	FROM openings
 	JOIN results ON openings.result = results.id
 	JOIN job_types ON openings.type_job = job_types.id
 	WHERE openings.user_id = ? AND openings.id = ?;
 	`
 
-	var opening struct {
-		ID              int       `json:"id"`
-		Firm            string    `json:"firm"`
-		TypeName        string    `json:"type_name"`
-		ResultName      string    `json:"result_name"`
-		ApplicationDate time.Time `json:"application_date"`
-		URL             string    `json:"url"`
-	}
+	o := &Opening{}
 
-	err = s.DB.QueryRow(q, userId, jobId).Scan(&opening.ID, &opening.Firm, &opening.TypeName, &opening.ResultName, &opening.ApplicationDate, &opening.URL)
+	err = s.DB.QueryRow(q, userId, openingId).Scan(&o.ID, &o.Firm, &o.TypeJob, &o.Result, &o.ApplicationDate, &o.URL, &o.Comment)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			fmt.Println(err)
 			http.Error(w, "Opening not found", http.StatusNotFound)
 		} else {
+			fmt.Println(err)
 			http.Error(w, "Error querying database", http.StatusInternalServerError)
 		}
 		return
@@ -128,7 +120,7 @@ func (s *Server) GetOpening(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	// Encode the opening struct to JSON and write to response
-	if err := json.NewEncoder(w).Encode(opening); err != nil {
+	if err := json.NewEncoder(w).Encode(o); err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
 	}
 }
@@ -158,11 +150,9 @@ func (s *Server) GetAllOpenings(w http.ResponseWriter, r *http.Request) {
 	FROM openings
 	JOIN results ON openings.result = results.id
 	JOIN job_types ON openings.type_job = job_types.id
-	WHERE openings.user_id = ?;
+	WHERE openings.user_id = ?
+	ORDER BY openings.id DESC;	
 	`
-
-	fmt.Println(q)
-	fmt.Println(userId)
 
 	rows, err := s.DB.Query(q, userId)
 	if err != nil {
@@ -240,13 +230,42 @@ func (s *Server) UpdateOpening(w http.ResponseWriter, r *http.Request) {
 	var opening Opening
 	err := json.NewDecoder(r.Body).Decode(&opening)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	query := "UPDATE openings SET firm = ?, type_job = ?, result = ?, application_date = ?, url = ? WHERE id = ?"
-	_, err = s.DB.Exec(query, opening.Firm, s.JobIdRelation[opening.TypeJob], s.ResultIdRelation[opening.Result], opening.ApplicationDate, opening.URL, id)
+	// Check if the comment is empty and handle as NULL
+	if opening.Comment.String == "" {
+		opening.Comment.Valid = false // Mark it as invalid so it becomes NULL
+	} else {
+		opening.Comment.Valid = true
+	}
+
+	// SQL query to update the opening, including the comment field
+	query := `
+		UPDATE openings 
+		SET firm = ?, 
+		    type_job = ?, 
+		    result = ?, 
+		    application_date = ?, 
+		    url = ?, 
+		    comment = ? 
+		WHERE id = ?
+	`
+
+	// Execute the query, passing the fields to update, including the Comment (which can be NULL)
+	_, err = s.DB.Exec(query,
+		opening.Firm,
+		s.JobIdRelation[opening.TypeJob],
+		s.ResultIdRelation[opening.Result],
+		opening.ApplicationDate,
+		opening.URL,
+		opening.Comment, // This can be NULL if Comment.Valid is false
+		id)
+
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Failed to update opening", http.StatusInternalServerError)
 		return
 	}

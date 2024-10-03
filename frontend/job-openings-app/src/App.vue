@@ -121,7 +121,7 @@ html {
   max-height: 460px;
   overflow-y: auto;
   margin: 10px;
-  background-color: #1b1b1b;
+  /* background-color: #1b1b1b; */
   padding: 15px;
   border-radius: 10px;
   max-width: calc(20% - 20px);

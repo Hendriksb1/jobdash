@@ -1,0 +1,23 @@
+Create two JavaScript objects from:
+1. experience: [work_position1, company1, years1, duties1]; [work_position2, company2, years2, duties2]; [education_degree, institution, year]
+2. job_posting: [job_requirements_text]
+3. highlight: [skills_to_emphasize]
+
+Output: 
+CV: {
+  "title": "[Job Title]",
+  "summary": "[Summary]",
+  "experiences": {
+    "[Company 1]": "[Responsibilities]",
+    "[Company 2]": "[Responsibilities]",
+    "[Company 3]": "[Responsibilities]",
+    "[Company N]": "[Responsibilities]"
+  },
+  "skills": "[Skills]",
+  "languages": "[Languages]"
+}, 
+CoverLetter: {
+  "firm": "[Company Name]",
+  "recipient": "[Recipient]",
+  "text": "[Cover letter text]"
+}
