@@ -27,8 +27,9 @@ export default createStore({
   actions: {
     async loginUser({ commit }, { email }) {
       try {
+         let encodedEmail = encodeURIComponent(email)
         // Make a request to your getUser endpoint
-        const response = await axios.get(`http://localhost:8080/getUserByEmail?email=${email}`);
+        const response = await axios.get(`http://localhost:8080/getUserByEmail?email=${encodedEmail}`);
         const user = response.data;
 
         if (user) {
@@ -42,10 +43,13 @@ export default createStore({
     },
     async registerUser({ commit }, user) {
       try {
+
+        console.log("register user in store.js")
         // Make a request to register the user (assuming you have an endpoint for this)
-        await axios.post('/api/registerUser', user);
+        await axios.post('http://localhost:8080/registerUser', user);
         commit('ADD_USER', user);
       } catch (error) {
+        console.error(error)
         alert('Registration failed');
       }
     },

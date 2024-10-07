@@ -6,7 +6,11 @@
         <p><strong>Opening Type:</strong> {{ opening.type_job }}</p>
         <p><strong>Result:</strong> {{ opening.result }}</p>
         <p><strong>Application Date:</strong> {{ formatApplicationDate(opening.application_date) }}</p>
-        <p><strong>Link: <a class="opening-url" :href="opening.url" target="_blank">{{ opening.url }}</a></strong></p>
+        <p><strong>Link: <a class="opening-url" 
+           :href="opening.url"
+           target="_blank"
+           >{{ opening.url }}</a>
+        </strong></p>
       </div>
 
       <!-- New Textarea for Comment/Notes -->

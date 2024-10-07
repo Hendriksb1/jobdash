@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	// "net/url"
@@ -68,6 +69,8 @@ func (s *Server) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 
 	email := r.URL.Query().Get("email")
 
+	fmt.Println(email)
+	
 	// Add validation if needed (e.g., checking email format)
 	if email == "" {
 		fmt.Println("invalid email")
@@ -140,27 +143,38 @@ func (m *Model) SelectUser(id int32) (*User, error) {
 	return user, nil
 }
 
-
 func (s *Server) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
+	fmt.Println("attempting to register user")
+
+	// Log request body for debugging
+	bodyBytes, _ := io.ReadAll(r.Body)
+	fmt.Println("Request body:", string(bodyBytes)) // Log raw request body
+
 	var u User
-	err := json.NewDecoder(r.Body).Decode(&u)
+	err := json.Unmarshal(bodyBytes, &u) // Manually unmarshal for better error handling
 	if err != nil {
-		fmt.Println("Invalid request body")
+		fmt.Println("Invalid request body:", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
+	// Debug: Check user data
+	fmt.Printf("Decoded user: %+v\n", u)
+
 	err = s.InsertUser(&u)
 	if err != nil {
-		fmt.Println("failed to store user: ", err.Error())
-		http.Error(w, "failed to store user", http.StatusInternalServerError)
+		fmt.Println("Failed to store user:", err.Error())
+		http.Error(w, "Failed to store user", http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintln(w, "User registered successfully")
 }
 
 func (m *Model) InsertUser(u *User) error {
@@ -233,7 +247,7 @@ func (s *Server) ChangeUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
-	
+
 	var u User
 	err := json.NewDecoder(r.Body).Decode(&u)
 	if err != nil {
