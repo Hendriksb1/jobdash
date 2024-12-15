@@ -44,16 +44,18 @@ export default {
   },
   methods: {
     async fetchResultsOverview() {
-      try {
-        const response = await axios.get('http://localhost:8080/getOpeningsByResult');
-        this.resultOverview = response.data;
+    try {
+      const response = await axios.get('http://localhost:8080/getOpeningsByResult', {
+        withCredentials: true  // Include cookies with the request
+      });
+      this.resultOverview = response.data;
 
-        // Update chart data based on the API response
-        this.updateChartData();
-      } catch (error) {
-        console.error('Error fetching results overview:', error);
-      }
-    },
+      // Update chart data based on the API response
+      this.updateChartData();
+    } catch (error) {
+      console.error('Error fetching results overview:', error);
+    }
+  },
     updateChartData() {
       const labels = this.resultOverview.map(overview => overview.result_name);
       const data = this.resultOverview.map(overview => overview.count_total);

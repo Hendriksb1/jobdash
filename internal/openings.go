@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
+	_ "github.com/mattn/go-sqlite3"
+
 	"github.com/gorilla/mux"
 )
 
@@ -45,27 +47,48 @@ func (s *Server) AddOpening(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Begin the transaction
+	tx, err := s.DB.Begin()
+	if err != nil {
+		fmt.Printf("could not begin transaction: %v", err)
+		return
+	}
+
+	// Defer the rollback to ensure it's called in case of an error
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Step 1: Insert the opening into the openings table (or applications table)
 	query := "INSERT INTO openings (firm, type_job, result, url, user_id) VALUES (?, ?, ?, ?, ?)"
-	result, err := s.DB.Exec(query, opening.Firm, s.JobIdRelation[opening.TypeJob], s.ResultIdRelation[opening.Result], opening.URL, opening.UserID)
+	_, err = tx.Exec(query, opening.Firm, s.JobIdRelation[opening.TypeJob], s.ResultIdRelation[opening.Result], opening.URL, opening.UserID)
 	if err != nil {
 		fmt.Println(err.Error())
 		http.Error(w, "Failed to insert opening", http.StatusInternalServerError)
 		return
 	}
 
-	id, err := result.LastInsertId()
+	// Step 2: Update the user's weekly application count
+	_, err = tx.Exec("UPDATE users SET weekly_applications_count = weekly_applications_count + 1 WHERE id = ?", opening.UserID)
 	if err != nil {
-		fmt.Println(err.Error())
-		http.Error(w, "Failed to retrieve last insert ID", http.StatusInternalServerError)
+		fmt.Println(err.Error(), "user_id: ", opening.UserID)
+		http.Error(w, "could not update weekly application count", http.StatusInternalServerError)
 		return
 	}
 
-	opening.ID = int(id)
+	// Commit the transaction
+	err = tx.Commit()
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, "could not commit transaction", http.StatusInternalServerError)
+		return
+	}
+
 	// opening.ApplicationDate = "date('now')"
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(opening)
-
-	fmt.Println("added ", opening)
 }
 
 func (s *Server) GetOpening(w http.ResponseWriter, r *http.Request) {

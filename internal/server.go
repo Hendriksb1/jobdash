@@ -44,36 +44,43 @@ func (s *Server) Init() {
 
 	s.DB, err = sql.Open("sqlite3", "./findajob.db")
 	if err != nil {
-		fmt.Println("Error opening database: %v", err)
+		fmt.Printf("Error opening database: %v", err)
 	}
 
 	err = s.DB.Ping()
 	if err != nil {
-		fmt.Println("Error connecting to database: %v", err)
+		fmt.Printf("Error connecting to database: %v", err)
 	}
 
 	// laod maps
 	s.JobIdRelation, err = s.LoadIdNameRelation("job_types")
 	if err != nil {
-		fmt.Println("failed to load job types: %v", err.Error())
+		fmt.Printf("failed to load job types: %v", err.Error())
 	}
 
 	s.ResultIdRelation, err = s.LoadIdNameRelation("results")
 	if err != nil {
-		fmt.Println("failed to load result types: %v", err.Error())
+		fmt.Printf("failed to load result types: %v", err.Error())
 	}
 
 	// update ghost status
 	err := s.UpdateGhostedStatus()
 	if err != nil {
-		fmt.Println("failed to update ghost status: %v", err.Error())
+		fmt.Printf("failed to update ghost status: %v", err.Error())
 	}
 
 	// update weekly table
-	err = s.UpdateWeeklyCounts()
+	t, err := s.GetLastResetDate()
 	if err != nil {
-		fmt.Println("failed to update weekly counts: %v", err.Error())
+		fmt.Printf("failed to get last reset date", err.Error())
 	}
+
+	// continue here with figuring out the logic
+
+	// today is monday
+	// next is today
+	fmt.Println(t)
+
 
 	mux := mux.NewRouter()
 
@@ -140,31 +147,6 @@ func (s *Server) UpdateGhostedStatus() error {
 	}
 
 	fmt.Printf("updated %v rows due to ghosting", r)
-
-	return nil
-}
-
-func (s *Server) UpdateWeeklyCounts() error {
-	q := `DELETE FROM weekly_counts;
-        	 INSERT INTO weekly_counts (week_end_date, entry_count)
-             SELECT
-                 DATE(application_date, 'weekday 0', '+6 days') AS week_end_date,
-                 COUNT(*) AS entry_count
-             FROM
-                 openings
-             GROUP BY
-                 week_end_date;`
-	res, err := s.DB.Exec(q)
-	if err != nil {
-		return err
-	}
-
-	r, err := res.LastInsertId()
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("updated %v rows due to weekly counting", r)
 
 	return nil
 }

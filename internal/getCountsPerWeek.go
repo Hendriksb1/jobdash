@@ -19,6 +19,11 @@ func (s *Server) GetCountsPerWeek(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// userID := GetUserIdFromCookie(r, w)
+	// if userID == 0 {
+	// 	return
+	// }
+
 	query := `
 		SELECT week_end_date, entry_count FROM weekly_counts;
 	`
